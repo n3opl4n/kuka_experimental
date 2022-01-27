@@ -1,3 +1,4 @@
+
 # Configuring RSI on the controller
 
 This guide highlights the steps needed in order to successfully configure the **RSI interface** on the controller to work with the **kuka_rsi_hardware_interface** on your PC with ROS.
@@ -6,6 +7,7 @@ This guide highlights the steps needed in order to successfully configure the **
 
 Windows runs behind the SmartHMI on the teach pad. Make sure that the **Windows interface** of the controller and the **PC with ROS** is connected to the same subnet.
 
+### For RSI version < 4.x
 1. Log in as **Expert** or **Administrator** on the teach pad and navigate to **Network configuration** (**Start-up > Network configuration > Activate advanced configuration**).
 2. There should already be an interface checked out as the **Windows interface**. For example:
    * **IP**: 192.168.250.20
@@ -26,8 +28,32 @@ Windows runs behind the SmartHMI on the teach pad. Make sure that the **Windows 
 If your **PC** has an IP address on the same subnet as the **Windows interface** on the controller, the controller should receive answers from the PC:
 * If this is the case, add another IP address to the current PC connection (e.g. 192.168.1.xx) on the same subnet as the **RSI** interface.
 
+### FOR RSI version = 4.x
+1. In the main menu, select **Start-up > Network configuration**. The Network configuration window opens.
+2. Press **Advanced...**. The window for advanced network configuration opens.
+3. Press **Add interface**. A new entry is created automatically in the **Configured interfaces:* area.
+4. Select the newly created entry and enter the network name (e.g. **RSI Ethernet**) in the **Interface designation:** box.
+5. Select the **Mixed IP address type in the Address type: box.**
+By selecting the **Mixed IP address** type, the receiving tasks required are created automatically:
+*• Receiving task:
+‒ Reception filter: Target subnet
+• Real-time receiving Task:
+‒ Reception filter: UDP*
+6. In the boxes underneath, enter the IP address of the robot controller and the subnet mask. 
+	(e.g. IP: 192.168.1.xx, Subnet mask: 255.255.255.0). 
+*The IP address range 192.168.0.x is blocked for the configuration of the network connection. The IP address entered must be in a separate subnet. The address must not be in the address range of another KLI subnet*
+7. Press **Save**.
+8. Reboot the robot controller so that the change takes effect.
+9. Add another IP address to your PC on the same subnet as the **RSI** interface.
+*Example:
+RSI Ethernet: 192.168.1.20 | 255.255.255.0
+PC Ethernet: 192.168.1.10 | 255.255.255.0*
+
+Test connection by pinging the RSI Ethernet from your PC.
+
 ## 2. KRL Files
 
+### For RSI version < 4.x 
 The files included in this folder specifies the data transferred via RSI. Some of the files needs to be modified to work for your specific configuration.
 
 ##### ros_rsi_ethernet.xml
@@ -58,6 +84,32 @@ The files **ros_rsi.rsi** and **ros_rsi.rsi.diagram** should not be edited. All 
 3. Log in as **Expert** or **Administrator**.
 4. Copy the `ros_rsi.src` file to `KRC:\R1\Program`.
 5. Copy the rest of the files to `C:\KRC\ROBOTER\Config\User\Common\SensorInterface`.
+
+### For RSI version = 4.x
+
+The ros_rsi files provided in this repository do not work for RSI v4.x. There might be minor differences between subversions, so it is strongly suggested to use the xml files provided in the `Examples` folder that came with the RSI Installation USB, as instructed below:
+
+1. Navigate to `DOC/Examples/Ethernet` folder of the RSI Installation USB.
+
+2. Edit **RSI_EthernetCofnig.xml**
+	1. Edit the `IP_NUMBER` tag so that it corresponds to the IP address previously added for your PC. (e.g. 192.168.1.10)
+	2. Keep the `PORT` tag as it is (49152) or change it if you want to use another port.
+	
+Note that the `rsi/listen_address` and `rsi/listen_port` parameters of the `kuka_rsi_hw_interface` must correspond to the `IP_NUMBER`and `PORT` set in these KRL files.
+
+3. Edit **RSI_ethernet.rsix** to set the `Timeout` and the application specific robot phytical limits.
+
+4. Copy  **RSI_EthernetCofnig.xml** and **RSI_ethernet.rsix** to `C:\KRC\ROBOTER\Config\User\Common\SensorInterface`
+
+5. Edit **ros_rsi.src** from this repository and change the following line from:
+ `ret = RSI_CREATE("ros_rsi",CONTID,TRUE)`
+ to
+  `ret = RSI_CREATE("RSI_ethernet",CONTID,TRUE)`
+	You can also edit the starting configuration there according to your application.
+
+	*Do not use the RSI_Ethernet.src from the RSI Installation USB.*
+
+6. Then, copy **ros_rsi.src** to  `KRC:\R1\Program`.
 
 ## 3. Configure the kuka_rsi_hw_interface
 The **kuka_rsi_hardware_interface** needs to be configured in order to successfully communicate with RSI. Inside `/kuka_rsi_hw_interface/test` and `/kuka_rsi_hw_interface/config` in this repository is a set of `*.yaml` files. These configuration files may be loaded into a launch-file used to start the **kuka_rsi_hardware_interface** with correct parameters, such as:
