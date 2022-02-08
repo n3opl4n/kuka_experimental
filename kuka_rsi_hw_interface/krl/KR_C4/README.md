@@ -1,4 +1,5 @@
 
+
 # Configuring RSI on the controller
 
 This guide highlights the steps needed in order to successfully configure the **RSI interface** on the controller to work with the **kuka_rsi_hardware_interface** on your PC with ROS.
@@ -45,8 +46,9 @@ By selecting the **Mixed IP address** type, the receiving tasks required are cre
 7. Press **Save**.
 8. Reboot the robot controller so that the change takes effect.
 9. Add another IP address to your PC on the same subnet as the **RSI** interface.
+
 *Example:
-RSI Ethernet: 192.168.1.20 | 255.255.255.0
+RSI Ethernet: 192.168.1.20 | 255.255.255.0   
 PC Ethernet: 192.168.1.10 | 255.255.255.0*
 
 Test connection by pinging the RSI Ethernet from your PC.
@@ -87,19 +89,36 @@ The files **ros_rsi.rsi** and **ros_rsi.rsi.diagram** should not be edited. All 
 
 ### For RSI version = 4.x
 
-The ros_rsi files provided in this repository do not work for RSI v4.x. There might be minor differences between subversions, so it is strongly suggested to use the xml files provided in the `Examples` folder that came with the RSI Installation USB, as instructed below:
+The newer version does not support `.rsi` files. The new format is `.rsix`
+So, most of the files provided in this repository do not work for RSI v4.x. There might be minor differences between subversions, so it is strongly suggested to use the `.rsix` and `.xml` files provided in the `Examples` folder that came with the RSI Installation USB, as instructed below:
 
 1. Navigate to `DOC/Examples/Ethernet` folder of the RSI Installation USB.
 
-2. Edit **RSI_EthernetCofnig.xml**
-	1. Edit the `IP_NUMBER` tag so that it corresponds to the IP address previously added for your PC. (e.g. 192.168.1.10)
-	2. Keep the `PORT` tag as it is (49152) or change it if you want to use another port.
-	
+2. Edit **RSI_EthernetConfig.xml**
+- Edit the `IP_NUMBER` tag so that it corresponds to the IP address previously added for your PC. (e.g. 192.168.1.10)
+-  Keep the `PORT` tag as it is (49152) or change it if you want to use another port.
+-  Make sure that the following lines are in the `<SEND>` tag (so that the robot publishes Cartesian and Joint states to remote PC):
+```xml
+     <ELEMENT TAG="DEF_RIst" TYPE="DOUBLE" INDX="INTERNAL" />
+     <ELEMENT TAG="DEF_RSol" TYPE="DOUBLE" INDX="INTERNAL" />
+     <ELEMENT TAG="DEF_AIPos" TYPE="DOUBLE" INDX="INTERNAL" />
+     <ELEMENT TAG="DEF_ASPos" TYPE="DOUBLE" INDX="INTERNAL" />
+```
+- Make sure that the following lines are in the `<RECEIVE>` tag (so that the robot get joint positions from the remote PC):
+```xml
+    <ELEMENT TAG="AK.A1" TYPE="DOUBLE" INDX="1" HOLDON="1" />
+    <ELEMENT TAG="AK.A2" TYPE="DOUBLE" INDX="2" HOLDON="1" />
+    <ELEMENT TAG="AK.A3" TYPE="DOUBLE" INDX="3" HOLDON="1" />
+    <ELEMENT TAG="AK.A4" TYPE="DOUBLE" INDX="4" HOLDON="1" />
+    <ELEMENT TAG="AK.A5" TYPE="DOUBLE" INDX="5" HOLDON="1" />
+    <ELEMENT TAG="AK.A6" TYPE="DOUBLE" INDX="6" HOLDON="1" />
+```
+
 Note that the `rsi/listen_address` and `rsi/listen_port` parameters of the `kuka_rsi_hw_interface` must correspond to the `IP_NUMBER`and `PORT` set in these KRL files.
 
-3. Edit **RSI_ethernet.rsix** to set the `Timeout` and the application specific robot phytical limits.
+3. Edit **RSI_ethernet.rsix** to set the correct elements for receiving joint position commands, the `Timeout` and the application specific robot phytical limits. The configuration in WorkVisual should look like this:
 
-4. Copy  **RSI_EthernetCofnig.xml** and **RSI_ethernet.rsix** to `C:\KRC\ROBOTER\Config\User\Common\SensorInterface`
+4. Copy  **RSI_EthernetConfig.xml** and **RSI_ethernet.rsix** to `C:\KRC\ROBOTER\Config\User\Common\SensorInterface`
 
 5. Edit **ros_rsi.src** from this repository and change the following line from:
  `ret = RSI_CREATE("ros_rsi",CONTID,TRUE)`
